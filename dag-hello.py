@@ -32,5 +32,4 @@ with DAG(
         trigger_rule=TriggerRule.ALL_FAILED  # s'exécute seulement si hello2 a échoué
     )
 
-    hello >> hello3
-    hello2 >> hello4
+    hello >> hello2 >> hello3 >> hello4
