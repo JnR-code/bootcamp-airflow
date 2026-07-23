@@ -23,4 +23,4 @@ with DAG(
         bash_command="echo 'Hello 3'"
     )
     
-    hello >> hello2 >> hello3
+    hello >> [hello2, hello3]
