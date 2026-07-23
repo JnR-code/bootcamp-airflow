@@ -1,6 +1,8 @@
 from datetime import datetime
 from airflow import DAG
 from airflow.operators.bash import BashOperator
+from airflow.sensors.time_delta import TimeDeltaSensor
+from datetime import timedelta
  
 with DAG(
     dag_id="dag_formation",
@@ -23,4 +25,10 @@ with DAG(
         bash_command="echo 'Hello 3'"
     )
     
-    hello >> [hello2, hello3]
+    wait = TimeDeltaSensor(
+    task_id="attendre_10s",
+    delta=timedelta(seconds=10),
+    mode="reschedule"  # libère le slot pendant l'attente
+)
+    
+    hello >> wait >> [hello2, hello3]
