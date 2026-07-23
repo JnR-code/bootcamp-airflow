@@ -1,7 +1,16 @@
 from datetime import datetime
 from airflow import DAG
-from airflow.operators.bash import BashOperator
-from airflow.utils.trigger_rule import TriggerRule
+from airflow.models import Variable
+from airflow.providers.standard.operators.python import PythonOperator
+from airflow.utils.task_group import TaskGroup
+ 
+def fonction_ex_1():
+    test_variable = Variable.get("key_1")
+    return test_variable
+ 
+def fonction_ex_2(ti):
+    valeur = ti.xcom_pull(task_ids="groupe_1.ex_1")
+    print(f"Valeur reçue depuis XCom : {valeur}")
  
 with DAG(
     dag_id="dag_formation",
@@ -10,26 +19,19 @@ with DAG(
     catchup=False,
     tags=["guide"],
 ) as dag:
-    hello = BashOperator(
-        task_id="hello",
-        bash_command="echo 'Airflow est prêt sur cette EC2'; hostname; date"
-    )
-
-    hello2 = BashOperator(
-        task_id="hello2",
-        bash_command="echo 'Hello 2 - simulation erreur'; exit 1"  # force l'échec
-    )
-
-    hello3 = BashOperator(
-        task_id="hello3",
-        bash_command="echo 'Hello 3'",
-        trigger_rule=TriggerRule.ALL_SUCCESS  # s'exécute seulement si hello a réussi (c'est le défaut, explicite ici pour la clarté)
-    )
-
-    hello4 = BashOperator(
-        task_id="hello4",
-        bash_command="echo 'Hello 4'",
-        trigger_rule=TriggerRule.ALL_FAILED  # s'exécute seulement si hello2 a échoué
-    )
-
-    hello >> hello2 >> hello3 >> hello4
+ 
+    with TaskGroup(group_id="groupe_1") as groupe_1:
+ 
+        ex_1 = PythonOperator(
+            task_id="ex_1",
+            python_callable=fonction_ex_1
+        )
+ 
+    with TaskGroup(group_id="groupe_2") as groupe_2:
+ 
+        ex_2 = PythonOperator(
+            task_id="ex_2",
+            python_callable=fonction_ex_2
+        )
+ 
+    groupe_1 >> groupe_2
